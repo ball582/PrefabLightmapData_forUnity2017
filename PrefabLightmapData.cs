@@ -121,21 +121,12 @@ public class PrefabLightmapData : MonoBehaviour
     [MenuItem("VR_Rehearsal_app/Bake Prefab Lightmaps")]
     static void GenerateLightmapInfo()
     {
-        Debug.ClearDeveloperConsole();
-
-        if (Lightmapping.giWorkflowMode != Lightmapping.GIWorkflowMode.OnDemand)
+        if (UnityEditor.Lightmapping.giWorkflowMode != UnityEditor.Lightmapping.GIWorkflowMode.OnDemand)
         {
             Debug.LogError("ExtractLightmapData requires that you have baked you lightmaps and Auto mode is disabled.");
             return;
         }
-
-        Lightmapping.Bake();
-
-        sceneLightmaps = new List<Texture2D_Remap>();
-
-        var scene = UnityEngine.SceneManagement.SceneManager.GetActiveScene();
-        var resourcePath = LIGHTMAP_RESOURCE_PATH + scene.name;
-        var scenePath = System.IO.Path.GetDirectoryName(scene.path) + "/" + scene.name + "/";
+        UnityEditor.Lightmapping.Bake();
 
         PrefabLightmapData[] prefabs = FindObjectsOfType<PrefabLightmapData>();
 
@@ -144,29 +135,22 @@ public class PrefabLightmapData : MonoBehaviour
             var gameObject = instance.gameObject;
             var rendererInfos = new List<RendererInfo>();
             var lightmaps = new List<Texture2D>();
-            var lightmaps2 = new List<Texture2D>();
 
-            GenerateLightmapInfo(scenePath, resourcePath, gameObject, rendererInfos, lightmaps, lightmaps2);
+            GenerateLightmapInfo(gameObject, rendererInfos, lightmaps);
 
             instance.m_RendererInfo = rendererInfos.ToArray();
             instance.m_Lightmaps = lightmaps.ToArray();
-            instance.m_Lightmaps2 = lightmaps2.ToArray();
 
-            var targetPrefab = PrefabUtility.GetPrefabParent(gameObject) as GameObject;
+            var targetPrefab = UnityEditor.PrefabUtility.GetPrefabParent(gameObject) as GameObject;
             if (targetPrefab != null)
             {
-                //Prefab
-                PrefabUtility.ReplacePrefab(gameObject, targetPrefab);
-                PrefabUtility.RevertPrefabInstance(gameObject);
+                //UnityEditor.Prefab
+                UnityEditor.PrefabUtility.ReplacePrefab(gameObject, targetPrefab);
             }
-
-            ApplyLightmaps(instance.m_RendererInfo, instance.m_Lightmaps, instance.m_Lightmaps2);
         }
-
-        Debug.Log("Update to prefab lightmaps finished");
     }
 
-    static void GenerateLightmapInfo(string scenePath, string resourcePath, GameObject root, List<RendererInfo> rendererInfos, List<Texture2D> lightmaps, List<Texture2D> lightmaps2)
+    static void GenerateLightmapInfo(GameObject root, List<RendererInfo> rendererInfos, List<Texture2D> lightmaps)
     {
         var renderers = root.GetComponentsInChildren<MeshRenderer>();
         foreach (MeshRenderer renderer in renderers)
@@ -178,21 +162,18 @@ public class PrefabLightmapData : MonoBehaviour
                 info.lightmapOffsetScale = renderer.lightmapScaleOffset;
 
                 Texture2D lightmap = LightmapSettings.lightmaps[renderer.lightmapIndex].lightmapColor;
-                Texture2D lightmap2 = LightmapSettings.lightmaps[renderer.lightmapIndex].lightmapDir;
-                int sceneLightmapIndex = AddLightmap(scenePath, resourcePath, renderer.lightmapIndex, lightmap, lightmap2);
 
-                info.lightmapIndex = lightmaps.IndexOf(sceneLightmaps[sceneLightmapIndex].lightmap);
+                info.lightmapIndex = lightmaps.IndexOf(lightmap);
                 if (info.lightmapIndex == -1)
                 {
                     info.lightmapIndex = lightmaps.Count;
-                    lightmaps.Add(sceneLightmaps[sceneLightmapIndex].lightmap);
-                    lightmaps2.Add(sceneLightmaps[sceneLightmapIndex].lightmap2);
+                    lightmaps.Add(lightmap);
                 }
 
                 rendererInfos.Add(info);
             }
         }
-    }
+}
 
     static int AddLightmap(string scenePath, string resourcePath, int originalLightmapIndex, Texture2D lightmap, Texture2D lightmap2)
     {
