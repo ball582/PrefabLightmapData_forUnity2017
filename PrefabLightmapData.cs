@@ -86,6 +86,7 @@ public class PrefabLightmapData : MonoBehaviour
                 combinedLightmaps2[i + settingslightmaps.Length] = new LightmapData();
                 combinedLightmaps2[i + settingslightmaps.Length].lightmapColor = combinedLightmaps[i].lightmapColor;
                 combinedLightmaps2[i + settingslightmaps.Length].lightmapDir = combinedLightmaps[i].lightmapDir;
+                Debug.Log(i);
             }
         }
 
@@ -135,8 +136,9 @@ public class PrefabLightmapData : MonoBehaviour
             var gameObject = instance.gameObject;
             var rendererInfos = new List<RendererInfo>();
             var lightmaps = new List<Texture2D>();
+            var lightmaps2 = new List<Texture2D>();
 
-            GenerateLightmapInfo(gameObject, rendererInfos, lightmaps);
+            GenerateLightmapInfo(gameObject, rendererInfos, lightmaps, lightmaps2);
 
             instance.m_RendererInfo = rendererInfos.ToArray();
             instance.m_Lightmaps = lightmaps.ToArray();
@@ -150,7 +152,7 @@ public class PrefabLightmapData : MonoBehaviour
         }
     }
 
-    static void GenerateLightmapInfo(GameObject root, List<RendererInfo> rendererInfos, List<Texture2D> lightmaps)
+    static void GenerateLightmapInfo( GameObject root, List<RendererInfo> rendererInfos, List<Texture2D> lightmaps, List<Texture2D> lightmaps2)
     {
         var renderers = root.GetComponentsInChildren<MeshRenderer>();
         foreach (MeshRenderer renderer in renderers)
@@ -162,6 +164,8 @@ public class PrefabLightmapData : MonoBehaviour
                 info.lightmapOffsetScale = renderer.lightmapScaleOffset;
 
                 Texture2D lightmap = LightmapSettings.lightmaps[renderer.lightmapIndex].lightmapColor;
+                Texture2D lightmap2 = LightmapSettings.lightmaps[renderer.lightmapIndex].lightmapDir;
+                //int sceneLightmapIndex = AddLightmap( renderer.lightmapIndex, lightmap, lightmap2);
 
                 info.lightmapIndex = lightmaps.IndexOf(lightmap);
                 if (info.lightmapIndex == -1)
@@ -175,7 +179,7 @@ public class PrefabLightmapData : MonoBehaviour
         }
 }
 
-    static int AddLightmap(string scenePath, string resourcePath, int originalLightmapIndex, Texture2D lightmap, Texture2D lightmap2)
+    static int AddLightmap( int originalLightmapIndex, Texture2D lightmap, Texture2D lightmap2)
     {
         int newIndex = -1;
 
@@ -201,8 +205,10 @@ public class PrefabLightmapData : MonoBehaviour
             lightmap_Remap.lightmap = GetLightmapAsset(filename + "_comp_light.exr", path, lightmap);
             if (lightmap2 != null)
             {
+                Debug.Log(1);
                 path = FileUtil.GetProjectRelativePath(EditorUtility.SaveFilePanel("Lightmap Near Path",
                     LIGHTMAP_RESOURCE_PATH, SceneManager.GetActiveScene().name + "_dir-" + originalLightmapIndex, "asset"));
+                Debug.Log(1);
                 lightmap_Remap.lightmap2 = GetLightmapAsset(filename + "_comp_dir.exr", path, lightmap2);
             }
 
