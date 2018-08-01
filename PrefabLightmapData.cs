@@ -21,6 +21,8 @@ public class PrefabLightmapData : MonoBehaviour
     Texture2D[] m_Lightmaps;
     [SerializeField]
     Texture2D[] m_Lightmaps2;
+    [SerializeField]
+    Texture2D[] m_Lightmaps3;
 
     public const string LIGHTMAP_RESOURCE_PATH = "Assets/Scenes/Resources/Lightmaps/";
 
@@ -31,16 +33,17 @@ public class PrefabLightmapData : MonoBehaviour
         public Texture2D originalLightmap;
         public Texture2D lightmap;
         public Texture2D lightmap2;
+        public Texture2D lightmap3;
     }
 
     static List<Texture2D_Remap> sceneLightmaps = new List<Texture2D_Remap>();
 
     void Awake()
     {
-        ApplyLightmaps(m_RendererInfo, m_Lightmaps, m_Lightmaps2);
+        ApplyLightmaps(m_RendererInfo, m_Lightmaps, m_Lightmaps2, m_Lightmaps3);
     }
 
-    static void ApplyLightmaps(RendererInfo[] rendererInfo, Texture2D[] lightmaps, Texture2D[] lightmaps2)
+    static void ApplyLightmaps(RendererInfo[] rendererInfo, Texture2D[] lightmaps, Texture2D[] lightmaps2, Texture2D[] lightmaps3)
     {
         bool existsAlready = false;
         int counter = 0;
@@ -71,6 +74,7 @@ public class PrefabLightmapData : MonoBehaviour
                 var newLightmapData = new LightmapData();
                 newLightmapData.lightmapColor = lightmaps[i];
                 newLightmapData.lightmapDir = lightmaps2[i];
+                newLightmapData.shadowMask = lightmaps3[i];
                 combinedLightmaps.Add(newLightmapData);
                 ++counter;
             }
@@ -86,6 +90,7 @@ public class PrefabLightmapData : MonoBehaviour
                 combinedLightmaps2[i + settingslightmaps.Length] = new LightmapData();
                 combinedLightmaps2[i + settingslightmaps.Length].lightmapColor = combinedLightmaps[i].lightmapColor;
                 combinedLightmaps2[i + settingslightmaps.Length].lightmapDir = combinedLightmaps[i].lightmapDir;
+                combinedLightmaps2[i + settingslightmaps.Length].shadowMask = combinedLightmaps[i].shadowMask;
             }
         }
 
@@ -112,7 +117,7 @@ public class PrefabLightmapData : MonoBehaviour
 
         foreach (var instance in prefabs)
         {
-            ApplyLightmaps(instance.m_RendererInfo, instance.m_Lightmaps, instance.m_Lightmaps2);
+            ApplyLightmaps(instance.m_RendererInfo, instance.m_Lightmaps, instance.m_Lightmaps2 , instance.m_Lightmaps3);
         }
 
         Debug.Log("Prefab lightmaps updated");
@@ -141,12 +146,14 @@ public class PrefabLightmapData : MonoBehaviour
             var rendererInfos = new List<RendererInfo>();
             var lightmaps = new List<Texture2D>();
             var lightmaps2 = new List<Texture2D>();
+            var lightmaps3 = new List<Texture2D>();
 
-            GenerateLightmapInfo(gameObject, rendererInfos, lightmaps, lightmaps2);
+            GenerateLightmapInfo(gameObject, rendererInfos, lightmaps, lightmaps2 , lightmaps3);
 
             instance.m_RendererInfo = rendererInfos.ToArray();
             instance.m_Lightmaps = lightmaps.ToArray();
             instance.m_Lightmaps2 = lightmaps2.ToArray();
+            instance.m_Lightmaps3 = lightmaps3.ToArray();
 
             var targetPrefab = PrefabUtility.GetPrefabParent(gameObject) as GameObject;
             if (targetPrefab != null)
@@ -156,13 +163,13 @@ public class PrefabLightmapData : MonoBehaviour
                 PrefabUtility.RevertPrefabInstance(gameObject);
             }
 
-            ApplyLightmaps(instance.m_RendererInfo, instance.m_Lightmaps, instance.m_Lightmaps2);
+            ApplyLightmaps(instance.m_RendererInfo, instance.m_Lightmaps, instance.m_Lightmaps2 , instance.m_Lightmaps3);
         }
 
         Debug.Log("Update to prefab lightmaps finished");
     }
 
-    static void GenerateLightmapInfo(GameObject root, List<RendererInfo> rendererInfos, List<Texture2D> lightmaps, List<Texture2D> lightmaps2)
+    static void GenerateLightmapInfo(GameObject root, List<RendererInfo> rendererInfos, List<Texture2D> lightmaps, List<Texture2D> lightmaps2, List<Texture2D> lightmaps3)
     {
         var renderers = root.GetComponentsInChildren<MeshRenderer>();
         foreach (MeshRenderer renderer in renderers)
@@ -175,6 +182,7 @@ public class PrefabLightmapData : MonoBehaviour
 
                 Texture2D lightmap = LightmapSettings.lightmaps[renderer.lightmapIndex].lightmapColor;
                 Texture2D lightmap2 = LightmapSettings.lightmaps[renderer.lightmapIndex].lightmapDir;
+                Texture2D lightmap3 = LightmapSettings.lightmaps[renderer.lightmapIndex].shadowMask;
                 //int sceneLightmapIndex = AddLightmap(scenePath, resourcePath, renderer.lightmapIndex, lightmap, lightmap2);
 
                 info.lightmapIndex = lightmaps.IndexOf(lightmap);
@@ -183,6 +191,7 @@ public class PrefabLightmapData : MonoBehaviour
                     info.lightmapIndex = lightmaps.Count;
                     lightmaps.Add(lightmap);
                     lightmaps2.Add(lightmap2);
+                    lightmaps3.Add(lightmap3);
                 }
 
                 rendererInfos.Add(info);
